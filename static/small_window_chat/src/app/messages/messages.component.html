@@ -1,0 +1,9 @@
+<div *ngFor="let msgEntry of messageHistory" class="messageRow">
+  <p *ngIf="msgEntry.ownMessage; else someoneElse">You: {{msgEntry.msg}}</p>
+
+  <ng-template #someoneElse>
+    {{msgEntry.id}}: {{msgEntry.msg}}
+  </ng-template>
+</div>
+
+

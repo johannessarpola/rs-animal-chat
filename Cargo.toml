@@ -1,0 +1,17 @@
+[package]
+name = "rs-websockets"
+version = "0.1.0"
+authors = ["Johannes Sarpola <johannes.sarpola@bilot.fi>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ws = "^0.8.1"
+rocket = "^0.4.1"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+rand = "0.7.3"
+chrono = "0.4.10"
+futures = "0.3.4"
+async-std = { version = "1.5.0", features = ["attributes"] }

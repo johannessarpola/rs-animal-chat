@@ -1,0 +1,13 @@
+<h1>Chatting</h1>
+<app-messages></app-messages>
+<div>
+  <label>
+    <input type="text" #message />
+  </label>
+  <button (click)="send(message.value); message.value = ''">
+    Send
+  </button>
+  <button (click)="clearHistory(); message.value = ''">
+    Clear
+  </button>
+</div>
