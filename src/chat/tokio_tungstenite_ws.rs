@@ -23,6 +23,7 @@ use futures::executor::block_on;
 use std::thread::sleep;
 use std::time::Duration;
 use std::borrow::Borrow;
+use chrono::{DateTime, Utc};
 
 type Tx = UnboundedSender<Message>;
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
@@ -42,7 +43,7 @@ fn send_id_assigned(socket: &UnboundedSender<Message>, id: &str) {
     });
 }
 
-fn broadcast_message(message: Message, peer_map: &PeerMap) {
+fn broadcast_message(message: &MessageEntry, peer_map: &PeerMap) {
 
     let peers = peer_map.lock().unwrap();
 
@@ -52,8 +53,27 @@ fn broadcast_message(message: Message, peer_map: &PeerMap) {
         //.filter(|(peer_addr, _)| peer_addr != &&user.addr)
         .map(|(_, ws_sink)| ws_sink);
 
-    for recp in broadcast_recipients {
-        recp.unbounded_send(message.clone()).unwrap();
+
+    serde_json::to_string(message).map(|json| {
+        for recp in broadcast_recipients {
+            recp.unbounded_send(Message::text(&json)).unwrap();
+
+        }
+    });
+
+}
+
+fn create_welcome_message(id: &str, connections: usize) -> MessageEntry {
+    println!("connection_opened_message");
+
+    let now: DateTime<Utc> = Utc::now();
+
+    let msg = format!("{} entered and the number of live connections is {}", &id, connections); // Ip address of the connected user
+    println!("{}", &msg);
+    MessageEntry {
+        id : Some("Server".to_string()),
+        msg: msg,
+        timestamp: now.to_rfc2822(),
     }
 }
 
@@ -70,6 +90,10 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, user: User)
 
     send_id_assigned(&write, &user.id);
     peer_map.lock().unwrap().insert(user.addr, write);
+
+    let connections = peer_map.lock().unwrap().len();
+    let welcome_message = create_welcome_message(&user.id, connections);
+    broadcast_message(&welcome_message, &peer_map);
 
     let (outgoing, incoming) = ws_stream.split();
 
@@ -92,7 +116,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, user: User)
                     msg.to_text().unwrap()
                 );
 
-                broadcast_message(msg, &peer_map);
+                broadcast_message(&outbound_message, &peer_map);
                 // Move message to analysis pipeline
                 tokio::spawn( analyze_messages(outbound_message));
 

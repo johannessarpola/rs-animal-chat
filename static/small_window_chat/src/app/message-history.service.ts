@@ -8,24 +8,33 @@ import { Subject, Observable } from 'rxjs';
 
 export class MessageHistoryService {
   messageHistory: MessageEntry[];
-  key = 'messageHistory';
+  messageHistoryKey = 'messageHistory';
+  userIdKey = 'userId';
 
   constructor() {
-    if(localStorage.getItem(this.key) != null) {
-      this.messageHistory = JSON.parse(localStorage.getItem(this.key));
+    if(localStorage.getItem(this.messageHistoryKey) != null) {
+      this.messageHistory = JSON.parse(localStorage.getItem(this.messageHistoryKey));
     } else {
       this.messageHistory = [];
     }
   }
 
-  save(me: MessageEntry) {
+  saveMessage(me: MessageEntry) {
     this.messageHistory.push(me)
-    localStorage.setItem(this.key, JSON.stringify(this.messageHistory));
+    localStorage.setItem(this.messageHistoryKey, JSON.stringify(this.messageHistory));
     return me;
   }
 
+  saveUserId(id: string) {
+    localStorage.setItem(this.userIdKey, id);
+  }
+
+  isOwnMessage(id: string) {
+    return localStorage.getItem(this.userIdKey) == id;
+  }
+
   clear() {
-    localStorage.removeItem(this.key);
+    localStorage.removeItem(this.messageHistoryKey);
   }
 
 }

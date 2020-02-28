@@ -35,8 +35,17 @@ export class ChatService {
 
     this.socket.subscribe(
       msg => {
-        this.msgHistory.save((msg as MessageEntry));
-        console.log(msg);
+        const me = msg as MessageEntry;
+        if(me.msg == null && me.timestamp == null) {
+          // ID Assigned
+          console.log("Assigned id " + me.id);
+          this.user_id = me.id;
+          this.msgHistory.saveUserId(me.id)
+        } else {
+          console.log("Received message");
+          console.log(me);
+          this.msgHistory.saveMessage((me));
+        }
       },
       err => console.error(err),
       () => {
@@ -46,7 +55,7 @@ export class ChatService {
 
   send(msg: string) {
     const timestamp = new Date();
-    const entry = {msg: msg, timestamp: timestamp, id: 'local'} as MessageEntry;
+    const entry = {msg: msg, timestamp: timestamp} as MessageEntry;
     // this.msgHistory.save(entry);
     this.socket.next(entry);
   }
