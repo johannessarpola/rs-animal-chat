@@ -1,16 +1,16 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::Cell;
-use std::future::Future;
-use std::process::id;
-use std::rc::Rc;
+
+
+
+
+
 use std::sync::{Arc, Mutex};
-use std::thread;
+
 
 use chrono::{DateTime, Utc};
 use futures::executor::block_on;
-use futures::TryFutureExt;
+
 use rand::seq::SliceRandom;
-use serde::{Deserialize, Serialize};
+
 use ws::{
     CloseCode,
     Error,
@@ -23,18 +23,8 @@ use ws::{
     Result,
     Sender,
 };
+use crate::chat::{MessageEntry, AssignedIdentityMessage};
 
-#[derive(Serialize, Deserialize)]
-struct MessageEntry {
-    msg: String,
-    timestamp: String,
-    id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize)]
-struct AssignedIdentityMessage {
-    id: String,
-}
 
 // Server web application handler
 struct Server {
@@ -48,7 +38,7 @@ struct User {
 }
 
 async fn analyze_messages(message_entry: &MessageEntry) {
-    if (message_entry.msg.contains("fuck")) {
+    if message_entry.msg.contains("fuck") {
         println!("Cussing alert!");
     }
 }
@@ -61,7 +51,7 @@ async fn id_assigned_message(server: &mut Server) {
             server.out.socket.send(Message::Text(json));
             ()
         }
-        Err(err) => println!("Could not send identity assigned"),
+        Err(_err) => println!("Could not send identity assigned"),
     }
     return ();
 }
@@ -89,14 +79,14 @@ async fn connection_opened_message(server: &mut Server) {
         Ok(json) => {
             server.out.socket.broadcast(Message::Text(json.to_string()));
         }
-        Err(err) => println!("Could not serialize outbound message"),
+        Err(_err) => println!("Could not serialize outbound message"),
     };
 
     return ();
 }
 
 impl Handler for Server {
-    fn on_request(&mut self, req: &Request) -> Result<(Response)> {
+    fn on_request(&mut self, req: &Request) -> Result<Response> {
         match req.resource() {
             "/ws" => {
                 // https://ws-rs.org/api_docs/ws/struct.Request.html
@@ -104,6 +94,7 @@ impl Handler for Server {
                 println!("Client found is {:?}", req.client_addr().unwrap());
 
                 let resp = Response::from_request(req).map( | mut r| {
+                    // Headers?
                     let h = r.headers_mut();
                     h.append(&mut vec![("id".to_owned(), b"id".to_vec())]);
                     r
@@ -115,7 +106,7 @@ impl Handler for Server {
         }
     }
 
-    fn on_open(&mut self, handshake: Handshake) -> Result<()> {
+    fn on_open(&mut self, _handshake: Handshake) -> Result<()> {
 
         block_on(async {
             id_assigned_message(self).await;
@@ -129,19 +120,19 @@ impl Handler for Server {
         let parsed: std::result::Result<MessageEntry, serde_json::error::Error> = serde_json::from_str(message.as_text()?);
         match parsed {
             Err(err) => println!("Invalid message received: {}", err.to_string()),
-            Ok(messageEntry) => {
-                println!("The message from the client is {:#?}", &messageEntry.msg);
+            Ok(message_entry) => {
+                println!("The message from the client is {:#?}", &message_entry.msg);
                 let identity = self.out.animal.to_string();
                 let outbound_message = MessageEntry {
-                    msg: messageEntry.msg,
+                    msg: message_entry.msg,
                     id: Some(identity.to_string()),
-                    timestamp: messageEntry.timestamp,
+                    timestamp: message_entry.timestamp,
                 };
                 analyze_messages(&outbound_message);
 
                 match serde_json::to_string(&outbound_message) {
                     Ok(json) => return self.out.socket.broadcast(Message::Text(json.to_string())),
-                    Err(err) => println!("Could not serialize outbound message"),
+                    Err(_err) => println!("Could not serialize outbound message"),
                 };
             }
         }
@@ -159,7 +150,7 @@ impl Handler for Server {
             }
             _ => println!("The client encountered an error: {}", reason),
         }
-        if (*self.count.lock().unwrap() > 0) {
+        if *self.count.lock().unwrap() > 0 {
             *self.count.lock().unwrap() -= 1;
         }
     }

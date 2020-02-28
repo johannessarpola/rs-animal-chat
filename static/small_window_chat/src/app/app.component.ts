@@ -11,7 +11,7 @@ export class AppComponent {
   title = 'swc';
   constructor(private cs: ChatService, private ms:MessageHistoryService) {}
   ngOnInit(): void {
-    this.cs.connect('ws://127.0.0.1:7777/ws');
+    this.cs.connect('ws://127.0.0.1:8080');
   }
   send(msg: string) {
     this.cs.send(msg);
