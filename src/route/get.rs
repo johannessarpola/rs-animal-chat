@@ -3,12 +3,12 @@ use rocket::response::{NamedFile};
 
 #[get("/")]
 pub fn index() -> &'static str {
-    "Visit http://localhost:8000/chat"
+    "Visit http://localhost:8000/browserify_chat"
 }
 
-#[get("/chat")]
+#[get("/browserify_chat")]
 pub fn chat() -> io::Result<NamedFile> {
-    NamedFile::open("static/chat/index.html")
+    NamedFile::open("static/browserify_chat/index.html")
 }
 
 #[get("/small")]

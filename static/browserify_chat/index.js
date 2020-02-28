@@ -2,7 +2,7 @@
 // $sudo npm install -g browserify
 // $browserify index.js > bundle.js
 
-const socket = new WebSocket("ws://127.0.0.1:7777/ws");
+const socket = new WebSocket("ws://127.0.0.1:8080");
 let userId = "";
 let open = false;
 let userInputs = [];
@@ -60,7 +60,9 @@ socket.onmessage = function (event) {
   console.log(event.data);
   
   const messageEntry = JSON.parse(event.data);
-  userId = messageEntry.id;
+  if(messageEntry.msg == null && messageEntry.timestamp == null) {
+    userId = messageEntry.id;
+  }
   console.log(messageEntry);
   const msg = messageEntry.msg;
   server.push({ origin : event.origin, timestamp: new Date(), entry: messageEntry});
